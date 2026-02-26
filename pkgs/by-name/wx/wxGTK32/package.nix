@@ -9,10 +9,10 @@
   gtk3,
   libGL,
   libGLU,
-  libSM,
-  libXinerama,
-  libXtst,
-  libXxf86vm,
+  libsm,
+  libxinerama,
+  libxtst,
+  libxxf86vm,
   libnotify,
   libpng,
   libsecret,
@@ -47,13 +47,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "wxwidgets";
-  version = "3.2.8.1";
+  version = "3.2.9";
 
   src = fetchFromGitHub {
     owner = "wxWidgets";
     repo = "wxWidgets";
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-aXI59oN5qqds6u2/6MI7BYLbFPy3Yrfn2FGTfxlPG7o=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-mYMUW3FnFkKHDQXb/k9UosSiWCPW7OQn+/orwq4Q95k=";
   };
 
   nativeBuildInputs = [ pkg-config ];
@@ -71,10 +71,10 @@ stdenv.mkDerivation (finalAttrs: {
     curl
     gspell # wxTextCtrl spell checking
     gtk3
-    libSM
-    libXinerama
-    libXtst
-    libXxf86vm
+    libsm
+    libxinerama
+    libxtst
+    libxxf86vm
     libnotify # wxNotificationMessage backend
     libsecret # wxSecretStore backend
     libxkbcommon # proper key codes in key events
@@ -114,9 +114,12 @@ stdenv.mkDerivation (finalAttrs: {
     "--enable-webviewwebkit"
   ];
 
-  SEARCH_LIB = lib.optionalString (
-    !stdenv.hostPlatform.isDarwin
-  ) "${libGLU.out}/lib ${libGL.out}/lib";
+  env = lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) {
+    SEARCH_LIB = toString [
+      "${libGLU.out}/lib"
+      "${libGL.out}/lib"
+    ];
+  };
 
   preConfigure = ''
     cp -r ${catch}/* 3rdparty/catch/

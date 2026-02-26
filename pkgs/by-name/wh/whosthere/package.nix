@@ -1,10 +1,11 @@
 {
   buildGoModule,
   fetchFromGitHub,
+  installShellFiles,
   lib,
+  stdenv,
   nix-update-script,
-  testers,
-  whosthere,
+  versionCheckHook,
 }:
 
 buildGoModule (finalAttrs: {
@@ -20,18 +21,29 @@ buildGoModule (finalAttrs: {
 
   vendorHash = "sha256-YVPsWpIXC5SLm+T2jEGqF4MBcKOAAk0Vpc7zCIFkNw8=";
 
-  checkFlags =
-    let
-      # Skip tests that require filesystem access
-      skippedTests = [
-        "TestResolveLogPath"
-        "TestStateDir"
-      ];
-    in
-    [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];
+  nativeBuildInputs = [
+    installShellFiles
+  ];
+
+  ldflags = [
+    "-s"
+    "-X"
+    "main.versionStr=${finalAttrs.version}"
+  ];
+
+  postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+    installShellCompletion --cmd whosthere \
+      --bash <("$out/bin/whosthere" completion bash) \
+      --fish <("$out/bin/whosthere" completion fish) \
+      --zsh <("$out/bin/whosthere" completion zsh)
+  '';
+
+  nativeInstallCheckInputs = [
+    versionCheckHook
+  ];
+  doInstallCheck = true;
 
   passthru.updateScript = nix-update-script { };
-  passthru.tests.version = testers.testVersion { package = whosthere; };
 
   meta = {
     description = "Local Area Network discovery tool";
@@ -43,7 +55,7 @@ buildGoModule (finalAttrs: {
     homepage = "https://github.com/ramonvermeulen/whosthere";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ matthiasbeyer ];
-    platforms = lib.platforms.linux;
+    platforms = lib.platforms.unix;
     mainProgram = "whosthere";
   };
 })
